@@ -1,0 +1,38 @@
+name: development_workflow
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  terraform_apply:
+    runs-on:  ubuntu_latest
+    steps:
+      - name: check out code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.3.7
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credential@v1
+        with:
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-access-key-id:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Initialize terraform for dev
+        working-directory: ./development
+        run: |
+          terraform init -input=false
+      - name: Plan terraform
+        id: plan
+        continue-on-error: true
+        working-directory: ./development
+        run: |
+          terraform plan -out=tfplan -input=false
+      - name: Apply Terraform
+        working-directory: ./development
+        run: |
+          terraform apply -auto-approve -input=false
